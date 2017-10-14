@@ -7,6 +7,8 @@ extern crate rand;
 
 use std::io::{self, Read, Seek};
 
+use std::ffi::CStr;
+
 /// Allows you to decode a sound file stream into packets.
 pub struct Decoder<R> where R: Read + Seek {
     // further informations are boxed so that a pointer can be passed to callbacks
@@ -184,6 +186,29 @@ impl<R> Decoder<R> where R: Read + Seek {
         unsafe {
             Ok(vorbisfile_sys::ov_time_tell(&mut self.data.vorbis))
         }
+    }
+
+    pub fn vendor(&mut self) -> &str {
+        let info = unsafe { vorbisfile_sys::ov_comment(&mut self.data.vorbis,
+            self.data.current_logical_bitstream) };
+
+        let info: &vorbis_sys::vorbis_comment = unsafe { std::mem::transmute(info) };
+
+        unsafe { CStr::from_ptr(info.vendor) }.to_str().unwrap()
+    }
+
+    pub fn comments(&mut self) -> Vec<&str> {
+        let info = unsafe { vorbisfile_sys::ov_comment(&mut self.data.vorbis,
+                self.data.current_logical_bitstream) };
+
+        let info: &vorbis_sys::vorbis_comment = unsafe { std::mem::transmute(info) };
+
+        (0..info.comments).map(|i| {
+            unsafe {
+                    CStr::from_ptr(*info.user_comments.offset(i as isize))
+            }.to_str().unwrap()
+        })
+        .collect()
     }
 
     pub fn packets(&mut self) -> PacketsIter<R> {
