@@ -11,5 +11,9 @@ libc = "0.2"
 ogg-sys = "0.0.9"
 rand = "0.3"
 vorbis-sys = "0.0.8"
-vorbis-encoder = "0.1"
+vorbis-encoder = { version = "0.1", optional = true }
 vorbisfile-sys = "0.0.8"
+
+[features]
+default = ["encoder"]
+encoder = ["vorbis-encoder"]
